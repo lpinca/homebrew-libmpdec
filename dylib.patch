@@ -1,0 +1,229 @@
+diff -Naur mpdecimal-2.4.2-original/Makefile.in mpdecimal-2.4.2-patched/Makefile.in
+--- mpdecimal-2.4.2-original/Makefile.in	2016-02-27 22:55:00.000000000 +0100
++++ mpdecimal-2.4.2-patched/Makefile.in	2019-01-23 11:10:30.000000000 +0100
+@@ -6,6 +6,7 @@
+ 
+ PACKAGE_TARNAME = @PACKAGE_TARNAME@
+ LIBSTATIC = @LIBSTATIC@
++LIBNAME = @LIBNAME@
+ LIBSONAME = @LIBSONAME@
+ LIBSHARED = @LIBSHARED@
+ INSTALL = @INSTALL@
+@@ -37,7 +38,7 @@
+ 	$(INSTALL) -d -m 755 $(DESTDIR)$(libdir)
+ 	$(INSTALL) -m 644 libmpdec/$(LIBSTATIC) $(DESTDIR)$(libdir)
+ 	$(INSTALL) -m 755 libmpdec/$(LIBSHARED) $(DESTDIR)$(libdir)
+-	cd $(DESTDIR)$(libdir) && ln -sf $(LIBSHARED) $(LIBSONAME) && ln -sf $(LIBSHARED) libmpdec.so
++	cd $(DESTDIR)$(libdir) && ln -sf $(LIBSHARED) $(LIBSONAME) && ln -sf $(LIBSHARED) $(LIBNAME)
+ 	$(INSTALL) -d -m 755 $(DESTDIR)$(docdir)
+ 	cp -R doc/* $(DESTDIR)$(docdir)
+ 
+diff -Naur mpdecimal-2.4.2-original/configure mpdecimal-2.4.2-patched/configure
+--- mpdecimal-2.4.2-original/configure	2016-02-27 22:55:00.000000000 +0100
++++ mpdecimal-2.4.2-patched/configure	2019-01-23 17:13:44.000000000 +0100
+@@ -661,6 +661,7 @@
+ build
+ LIBSHARED
+ LIBSONAME
++LIBNAME
+ LIBSTATIC
+ MACHINE
+ target_alias
+@@ -2380,9 +2381,28 @@
+ 
+ 
+ 
++# System and machine type (only used for Solaris and Darwin):
++{ $as_echo "$as_me:${as_lineno-$LINENO}: checking system as reported by uname -s" >&5
++$as_echo_n "checking system as reported by uname -s... " >&6; }
++ac_sys_system=`uname -s`
++{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_sys_system" >&5
++$as_echo "$ac_sys_system" >&6; }
++
+ LIBSTATIC=libmpdec.a
+-LIBSONAME=libmpdec.so.2
+-LIBSHARED=libmpdec.so.2.4.2
++case $ac_sys_system in
++    darwin*|Darwin*)
++        LIBNAME=libmpdec.dylib
++        LIBSONAME=libmpdec.2.dylib
++        LIBSHARED=libmpdec.2.4.2.dylib
++        ;;
++    *)
++        LIBNAME=libmpdec.so
++        LIBSONAME=libmpdec.so.2
++        LIBSHARED=libmpdec.so.2.4.2
++        ;;
++esac
++
++
+ 
+ 
+ 
+@@ -3478,13 +3498,6 @@
+ 
+ 
+ 
+-# System and machine type (only used for Solaris and Darwin):
+-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking system as reported by uname -s" >&5
+-$as_echo_n "checking system as reported by uname -s... " >&6; }
+-ac_sys_system=`uname -s`
+-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_sys_system" >&5
+-$as_echo "$ac_sys_system" >&6; }
+-
+ # Checks for header files:
+ 
+ ac_ext=c
+diff -Naur mpdecimal-2.4.2-original/configure.ac mpdecimal-2.4.2-patched/configure.ac
+--- mpdecimal-2.4.2-original/configure.ac	2016-02-27 22:55:00.000000000 +0100
++++ mpdecimal-2.4.2-patched/configure.ac	2019-01-23 12:00:32.000000000 +0100
+@@ -5,10 +5,27 @@
+ AC_CONFIG_FILES([Makefile libmpdec/Makefile tests/Makefile libmpdec/mpdecimal.h])
+ AC_ARG_VAR(MACHINE, [force configuration: x64, uint128, ansi64, ppro, ansi32, ansi-legacy])
+ 
++# System and machine type (only used for Solaris and Darwin):
++AC_MSG_CHECKING(system as reported by uname -s)
++ac_sys_system=`uname -s`
++AC_MSG_RESULT($ac_sys_system)
++
+ LIBSTATIC=libmpdec.a
+-LIBSONAME=libmpdec.so.2
+-LIBSHARED=libmpdec.so.2.4.2
++case $ac_sys_system in
++    darwin*|Darwin*)
++        LIBNAME=libmpdec.dylib
++        LIBSONAME=libmpdec.2.dylib
++        LIBSHARED=libmpdec.2.4.2.dylib
++        ;;
++    *)
++        LIBNAME=libmpdec.so
++        LIBSONAME=libmpdec.so.2
++        LIBSHARED=libmpdec.so.2.4.2
++        ;;
++esac
++
+ AC_SUBST(LIBSTATIC)
++AC_SUBST(LIBNAME)
+ AC_SUBST(LIBSONAME)
+ AC_SUBST(LIBSHARED)
+ 
+@@ -29,11 +46,6 @@
+ AC_PROG_RANLIB
+ AC_SUBST(RANLIB)
+ 
+-# System and machine type (only used for Solaris and Darwin):
+-AC_MSG_CHECKING(system as reported by uname -s)
+-ac_sys_system=`uname -s`
+-AC_MSG_RESULT($ac_sys_system)
+-
+ # Checks for header files:
+ AC_HEADER_STDC
+ AC_CHECK_HEADERS(inttypes.h stdint.h)
+diff -Naur mpdecimal-2.4.2-original/libmpdec/Makefile.in mpdecimal-2.4.2-patched/libmpdec/Makefile.in
+--- mpdecimal-2.4.2-original/libmpdec/Makefile.in	2016-02-27 22:55:00.000000000 +0100
++++ mpdecimal-2.4.2-patched/libmpdec/Makefile.in	2019-01-23 11:12:36.000000000 +0100
+@@ -5,6 +5,7 @@
+ 
+ 
+ LIBSTATIC = @LIBSTATIC@
++LIBNAME = @LIBNAME@
+ LIBSONAME = @LIBSONAME@
+ LIBSHARED = @LIBSHARED@
+ 
+@@ -60,7 +61,7 @@
+ 
+ $(LIBSHARED): Makefile $(SHARED_OBJS)
+ 	$(LD) $(MPD_LDFLAGS) $(MPD_SOFLAGS) -o $(LIBSHARED) $(SHARED_OBJS) -lm
+-	ln -sf $(LIBSHARED) libmpdec.so
++	ln -sf $(LIBSHARED) $(LIBNAME)
+ 	ln -sf $(LIBSHARED) $(LIBSONAME)
+ 
+ 
+@@ -220,7 +221,7 @@
+ 	LD_LIBRARY_PATH=. ./bench_shared $(MPD_PREC) 1000
+ 	LD_LIBRARY_PATH=. ./bench_shared $(MPD_DPREC) 1000
+ 	rm -f *.o *.gch .objs/*.o .objs/*.gch bench bench_shared
+-	rm -f $(LIBSTATIC) $(LIBSHARED) $(LIBSONAME) libmpdec.so
++	rm -f $(LIBSTATIC) $(LIBSHARED) $(LIBSONAME) $(LIBNAME)
+ 
+ profile_use: bench bench_shared
+ 	./bench $(MPD_PREC) 1000
+@@ -234,7 +235,7 @@
+ 
+ clean: FORCE
+ 	rm -f *.o *.so *.gch *.gcda *.gcno *.gcov *.dyn *.dpi *.lock
+-	rm -f bench bench_shared $(LIBSTATIC) $(LIBSHARED) $(LIBSONAME) libmpdec.so
++	rm -f bench bench_shared $(LIBSTATIC) $(LIBSHARED) $(LIBSONAME) $(LIBNAME)
+ 	cd .objs && rm -f *.o *.so *.gch *.gcda *.gcno *.gcov *.dyn *.dpi *.lock
+ 
+ distclean: clean
+diff -Naur mpdecimal-2.4.2-original/tests/runshort.sh mpdecimal-2.4.2-patched/tests/runshort.sh
+--- mpdecimal-2.4.2-original/tests/runshort.sh	2016-02-27 22:55:00.000000000 +0100
++++ mpdecimal-2.4.2-patched/tests/runshort.sh	2019-01-23 17:00:12.000000000 +0100
+@@ -28,9 +28,21 @@
+ printf "#                             shared library\n"
+ printf "# ========================================================================\n\n"
+ 
++OSTYPE=`uname -s | tr A-Z a-z`
++
++run_test_shared ()
++{
++  if [ "$OSTYPE" = "darwin" ]
++  then
++    DYLD_LIBRARY_PATH=../libmpdec ./runtest_shared "$1"
++  else
++    LD_LIBRARY_PATH=../libmpdec ./runtest_shared "$1"
++  fi
++}
++
+ printf "Running official tests ...\n\n"
+ 
+-if  ! LD_LIBRARY_PATH=../libmpdec ./runtest_shared official.decTest
++if  ! run_test_shared official.decTest
+ then
+     printf "\nFAIL\n\n\n"
+     exit 1
+@@ -38,7 +50,7 @@
+ 
+ printf "Running additional tests ...\n\n"
+ 
+-if ! LD_LIBRARY_PATH=../libmpdec ./runtest_shared additional.decTest
++if ! run_test_shared additional.decTest
+ then
+     printf "\nFAIL\n\n\n"
+     exit 1
+diff -Naur mpdecimal-2.4.2-original/tests/runshort_alloc.sh mpdecimal-2.4.2-patched/tests/runshort_alloc.sh
+--- mpdecimal-2.4.2-original/tests/runshort_alloc.sh	2016-02-27 22:55:00.000000000 +0100
++++ mpdecimal-2.4.2-patched/tests/runshort_alloc.sh	2019-01-23 17:01:33.000000000 +0100
+@@ -28,9 +28,21 @@
+ printf "#                             shared library\n"
+ printf "# ========================================================================\n\n"
+ 
++OSTYPE=`uname -s | tr A-Z a-z`
++
++run_test_alloc_shared ()
++{
++  if [ "$OSTYPE" = "darwin" ]
++  then
++    DYLD_LIBRARY_PATH=../libmpdec ./runtest_alloc_shared "$1"
++  else
++    LD_LIBRARY_PATH=../libmpdec ./runtest_alloc_shared "$1"
++  fi
++}
++
+ printf "Running official tests with allocation failures ...\n\n"
+ 
+-if  ! LD_LIBRARY_PATH=../libmpdec ./runtest_alloc_shared official.decTest
++if  ! run_test_alloc_shared official.decTest
+ then
+     printf "\nFAIL\n\n\n"
+     exit 1
+@@ -38,7 +50,7 @@
+ 
+ printf "Running additional tests with allocation failures ...\n\n"
+ 
+-if ! LD_LIBRARY_PATH=../libmpdec ./runtest_alloc_shared additional.decTest
++if ! run_test_alloc_shared additional.decTest
+ then
+     printf "\nFAIL\n\n\n"
+     exit 1
