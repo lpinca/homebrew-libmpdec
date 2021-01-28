@@ -17,6 +17,7 @@ class Libmpdec < Formula
 
   test do
     (testpath/"test.c").write <<~EOS
+      #include <assert.h>
       #include <mpdecimal.h>
       #include <string.h>
 
