@@ -3,6 +3,7 @@ class Libmpdec < Formula
   homepage "https://www.bytereef.org/mpdecimal/"
   url "https://www.bytereef.org/software/mpdecimal/releases/mpdecimal-2.4.2.tar.gz"
   sha256 "83c628b90f009470981cf084c5418329c88b19835d8af3691b930afccb7d79c7"
+  license "BSD-2-Clause"
 
   patch do
     url "https://raw.githubusercontent.com/lpinca/homebrew-libmpdec/master/dylib.patch"
